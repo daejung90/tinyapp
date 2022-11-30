@@ -8,7 +8,7 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-    res.send("Hello!")
+    res.send("Hello")
 });
 
 app.listen(PORT, () => {
@@ -17,5 +17,9 @@ app.listen(PORT, () => {
 
 app.get("/urls/json", (req, res) => {
     res.json(urlDatabase)
+})
+
+app.get("/hello", (req, res) => {
+    res.send(res.send("<html><body>Hello <b>World<b></body></html>\n"))
 })
 
