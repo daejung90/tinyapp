@@ -58,19 +58,36 @@ app.post("/urls", (req, res) => {
     res.send("Ok")
 })
 
+app.post("/urls/:id", (req, res) => {
+    console.log(urlDatabase);
+    const updatedURL = req.params.id;
+    console.log(updatedURL);
+    urlDatabase[updatedURL] = req.body.longURL
+    console.log(urlDatabase);
+    
+    res.redirect("/urls")
+})
+
 app.get("/u/:id", (req, res) => {
     const longURL = urlDatabase[req.params.id]
     console.log(longURL)
     res.redirect(longURL)
 })
-//DELETING
+
 app.post("/urls/:id/delete", (req, res) => {
     delete urlDatabase[req.params.id]
     res.redirect("/urls")
 })
-// Editing
-app.post("/urls/:id", (req, res) => {
-    const updateURL = req.params.id
-    urlDatabase[updateURL] = req.body.longURL
-    res.redirect("/urls")
+
+// app.get("/login", (req, res) => {
+//     res.render()
+// })
+app.post('/login', (req, res) => {
+    res.cookie(req.body.username);
+    console.log(req.body.username)
+    const templateVars = {
+    username: undefined,
+    urls: urlDatabase,
+  };
+  res.redirect("/urls");
 })
