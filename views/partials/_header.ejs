@@ -16,7 +16,29 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <% if(username){ %>
+          <div class="'navbar-nav">
+            <form method="POST" action="/logout" for="username" class="d-flex nav-item" role="search">
+              <span class="nav-link"><b>Welcome back, <%= username %>!</b></span>
+              <button class="btn btn-light" type="submit">Logout</button>
+            </form>
+            </div>
+        
+          <% } else{ %>  
+        
+            <div><form action="/login" method="post">
+              <div class="container">
+                <label for="uname"><b>Username</b></label>
+                <input type="text" placeholder="Enter Username" name="username" required>
+                <button type="submit" class="btn btn-primary">Login</button>
+              </div>    
+        
+        <% } %>
       </div>
     </div>
+    
+      </div>
+    </form>
+  </div>
   </nav>
 </header>

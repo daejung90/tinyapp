@@ -1,9 +1,11 @@
 const express = require('express');
 const app = express();
+const cookieParser = require('cookie-parser')
 const PORT = 8080; //default port 8080 (usually when is working in localhost)
 
 app.use(express.urlencoded ({ extended: true }));
 app.set("view engine", "ejs");
+app.use(cookieParser())
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -24,7 +26,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}!`)
+    console.log(`App listening on port ${PORT}!`)
 });
 
 app.get("/urls/json", (req, res) => {
@@ -32,7 +34,8 @@ app.get("/urls/json", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const templateVars ={ url: urlDatabase};
+    const templateVars ={ url: urlDatabase, username: req.cookies["username"]};
+    console.log("cookies: ", req.cookies)
     res.render("urls_index", templateVars);
 })
 
@@ -45,7 +48,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-    const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+    const templateVars = { username: req.cookies["username"], id: req.params.id, longURL: urlDatabase[req.params.id] };
     res.render("urls_show", templateVars);
 });
 
@@ -79,15 +82,20 @@ app.post("/urls/:id/delete", (req, res) => {
     res.redirect("/urls")
 })
 
-// app.get("/login", (req, res) => {
-//     res.render()
-// })
+
 app.post('/login', (req, res) => {
     res.cookie(req.body.username);
     console.log(req.body.username)
-    const templateVars = {
-    username: undefined,
-    urls: urlDatabase,
-  };
+  res.cookie('username', req.body.username)
   res.redirect("/urls");
+
+    const templateVars = {
+        username: req.body.username,
+        urls: urlDatabase
+    };
+});
+
+app.post("/logout", (req, res) => {
+    res.clearCookie('username', req.body.username);
+    res.redirect("/urls")
 })
