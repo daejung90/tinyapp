@@ -26,11 +26,16 @@
         
           <% } else{ %>  
         
-            <div><form action="/login" method="post">
+            <div><form action="/register" method="post">
               <div class="container">
-                <label for="username"><b>Username</b></label>
-                <input type="text" placeholder="Enter Username" name="username" required>
+                <label for="username"><b>Email</b></label>
+                <input type="email" placeholder="Enter email" name="email" required>
+            
+                <label for="psw"><b>Password</b></label>
+                <input type="password" placeholder="Enter Password" name="password" required>
+            
                 <button type="submit" class="btn btn-primary">Login</button>
+              </div>
               </div>    
         
         <% } %>
