@@ -44,7 +44,11 @@ app.get("/hello", (req, res) => {
 })
 
 app.get("/urls/new", (req, res) => {
-    res.render("urls_new")
+    const templateVars = {
+        url: urlDatabase,
+        username: req.cookies["username"],
+    }
+    res.render("urls_new", templateVars)
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -98,4 +102,8 @@ app.post('/login', (req, res) => {
 app.post("/logout", (req, res) => {
     res.clearCookie('username', req.body.username);
     res.redirect("/urls")
+})
+
+app.get("/registration", (req, res) => {
+    res.render("_login")
 })
