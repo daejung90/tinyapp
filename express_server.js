@@ -16,7 +16,7 @@ const users = {
     userRandomID: {
         id: "userRandomID",
         email: "user@example.com",
-        password: "purple-monkey-dinosaur",
+        password: "12345",
     },
     user2RandomID: {
         id: "user2RandomID",
@@ -65,6 +65,19 @@ const getUserByID = (userID, users) => {
     return false
 }
 
+// const urlsForUser = function (userId) {
+//     const urls = {};
+    
+//     const keys = Object.values(urlDatabase)
+//     for (const id in keys){
+//         const url = urlDatabase[id]
+//         if (url.userID === userId) {
+//             urls[id] = url
+//         }
+//     }
+//     return urls
+// }
+
 app.get("/login", (req, res) => {
     const templateVars = { url: urlDatabase, user_id: null };
 
@@ -94,8 +107,8 @@ app.post('/login', (req, res) => {
     const email = req.body.email
     const password = req.body.password
     const user = getUser(email, users)
-    if (user.email !== email) return res.status(403).send("The email does not exists.")
-    if (user.password !== password) return res.status(403).send('Wrong password')
+    if (user.email !== email || user.password !== password) return res.status(403).send("Invalid login credentials! Please <a href='/login'>Try again</a>")
+    // if (user.password !== password) return res.status(403).send('Wrong password')
 
     res.cookie('user_id', user.id)
     res.redirect("/urls");
@@ -112,19 +125,23 @@ app.get("/register", (req, res) => {
 })
 // Register a new USER to the database - checking if the email already exists not working
 app.post("/register", (req, res) => {
-    const { email } = req.body
-    console.log("CHECK EMAIL:" + checkEmail(email))
+    const { email, password } = req.body
+    if(!email || !password) {return res.send("Cannot be empty! Please <a href='/register'> Try again</a>")}
+    // console.log("CHECK EMAIL:" + checkEmail(email))
     if (checkEmail(email)) { return res.status(400).send('Email already exists\n Try another email.') }
 
-    let newUserID = generateRandomString();
-    users[newUserID] = {
-        id: newUserID,
-        email: req.body.email,
-        password: req.body.password,
-    }
-    res.cookie('user_id', newUserID);
-    console.log(users);
-    console.log(users[req.params.id]);
+    const id = generateRandomString(6);
+    const user = {id, email, password}
+    users[id] = user
+    // let newUserID = generateRandomString();
+    // users[newUserID] = {
+    //     id: newUserID,
+    //     email: req.body.email,
+    //     password: req.body.password,
+    // }
+    res.cookie('user_id', id);
+    // console.log(users);
+    // console.log(users[req.params.id]);
     res.redirect('/urls')
 });
 
@@ -133,11 +150,13 @@ app.get("/urls/json", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const userCookieID = req.cookies['user_id']
+    const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
     const user = getUserByID(userCookieID, users)
-
+    if (!user){
+        return res.send('You must login first! Please <a href="/login">Try again</a>')
+    }
+    // const urls = urlsForUser(id)
     const templateVars = { url: urlDatabase, user_id: null };
-
     if(user) {
         templateVars.user_id = user.email
     }
@@ -173,18 +192,18 @@ app.post("/urls", (req, res) => {
 })
 
 app.post("/urls/:id", (req, res) => {
-    console.log(urlDatabase);
+    // console.log(urlDatabase);
     const updatedURL = req.params.id;
-    console.log(updatedURL);
+    // console.log(updatedURL);
     urlDatabase[updatedURL] = req.body.longURL
-    console.log(urlDatabase);
+    // console.log(urlDatabase);
 
     res.redirect("/urls")
 })
 // shortURL redirect to longURL
 app.get("/u/:id", (req, res) => {
     const longURL = urlDatabase[req.params.id]
-    console.log(longURL)
+    // console.log(longURL)
     res.redirect(longURL)
 })
 
