@@ -18,7 +18,7 @@ const urlDatabase = {
     },
     i3BoGr: {
       longURL: "https://www.google.ca",
-      userID: "aJ48lW",
+      userID: "user2RandomID",
     },
   };
 
@@ -81,9 +81,9 @@ const getUserByID = (userID, users) => {
 
 const urlsForUser = function (userId) {
     const urls = {};
-    
-    // const keys = Object.values(urlDatabase)
-    for (const id in urlDatabase){
+
+    const keys = Object.keys(urlDatabase)
+    for (const id of keys){
         const url = urlDatabase[id]
         if (url.userID === userId) {
             urls[id] = url
@@ -114,7 +114,7 @@ app.get("/login", (req, res) => {
 })
 
 
-
+//CHECK
 app.post('/login', (req, res) => {
     const email = req.body.email
     const password = req.body.password
@@ -161,22 +161,15 @@ app.get("/urls/json", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
+    const userCookieID = req.cookies.user_id             //const id = req.cookies['user_id']
     const user = getUserByID(userCookieID, users)
     if (!user){
         return res.send('You must login first! Please <a href="/login">Try again</a>')
     }
-    const id = req.cookies.user_id
-    const urls = urlsForUser(id)
+    const urls = urlsForUser(userCookieID)
     const templateVars = { url: urls, user_id: user.id, user_email: user.email };
-
     
-    if(user) {
-        res.render("urls_index", templateVars);
-        }
-    
-    //console.log("cookies: ", req.cookies)
-    
+    res.render("urls_index", templateVars);
 })
 
 app.get("/hello", (req, res) => {
@@ -205,7 +198,7 @@ app.post("/urls/new", (req, res) => {
   if (!urlDatabase[newUrlId]) {
     urlDatabase[newUrlId] = {
       longURL: req.body.longURL,
-      userID: req.cookies.user_id
+      userID: req.cookies.user_id 
     }
   }
 
@@ -215,31 +208,35 @@ app.post("/urls/new", (req, res) => {
 app.get("/urls/:id", (req, res) => {
     const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
     const user = getUserByID(userCookieID, users)
-    // if (!user){
-    //     return res.send('You must login first! Please <a href="/login">Try again</a>')
-    // }
-    // if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
-    //     return res.status(403).send('Sorry, only the user can view this page!')
-    //   }
+    if (!user){
+        return res.send('You must login first! Please <a href="/login">Try again</a>')
+    }
+    if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+        return res.status(403).send('Sorry, only the user can view this page!')
+      }
     const longURL = urlDatabase[req.params.id].longURL
     const templateVars = { user_id: req.params.id, id: req.params.id, longURL: longURL, user_email: user.email};
     res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
+    const userCookieID = req.cookies.user_id 
+    const user = getUserByID(userCookieID, users)
     const shortURL = generateRandomString();
     const { longURL } = req.body;
-    urlDatabase[shortURL] = longURL
-    res.redirect(`urls/${shortURL}`)
-    console.log(req.body);
-    res.send("Ok")
+    urlDatabase[shortURL] =  { userID: userCookieID, longURL: longURL } 
+    //res.render("/urls/" + shortURL);
+    const urls = urlsForUser(userCookieID)
+
+    const templateVars = { url: urls, user_id: user.id, user_email: user.email };
+    res.render("urls_index", templateVars )
 })
 
 app.post("/urls/:id", (req, res) => {
     // console.log(urlDatabase);
     const updatedURL = req.params.id;
     // console.log(updatedURL);
-    urlDatabase[updatedURL] = req.body.longURL
+    urlDatabase[updatedURL].longURL = req.body.longURL
     // console.log(urlDatabase);
 
     res.redirect("/urls")
@@ -247,12 +244,19 @@ app.post("/urls/:id", (req, res) => {
 
 // shortURL redirect to longURL
 app.get("/u/:id", (req, res) => {
+    
     const longURL = urlDatabase[req.params.id].longURL
     if (!longURL) {
         return res.send('This URL id does not exist')
     }
-    console.log(longURL)
-    res.redirect(longURL)
+    
+    if(longURL.includes('http')){
+        res.redirect(longURL)
+    }
+    else{
+        res.redirect('http://' + longURL)
+    }
+   
 })
 
 //deleting route
