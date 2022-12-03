@@ -22,7 +22,7 @@
     <% if(user_id){ %>
       <div class="'navbar-nav">
         <form method="POST" action="/logout" for="user_id" class="d-flex nav-item" role="search">
-          <span class="nav-link">Welcome, <%= user_id %>!</span>
+          <span class="nav-link">Welcome, <%= user_email %>!</span>
           <button class="btn btn-light" type="submit">Logout</button>
         </form>
         </div>

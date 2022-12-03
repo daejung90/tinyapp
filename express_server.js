@@ -7,14 +7,24 @@ app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.use(cookieParser())
 
+// const urlDatabase = {
+//     "b2xVn2": "http://www.lighthouselabs.ca",
+//     "9sm5xK": "http://www.google.com"
+// };
 const urlDatabase = {
-    "b2xVn2": "http://www.lighthouselabs.ca",
-    "9sm5xK": "http://www.google.com"
-};
+    b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW",
+    },
+    i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW",
+    },
+  };
 
 const users = {
     userRandomID: {
-        id: "userRandomID",
+        id: "aJ48lW",
         email: "user@example.com",
         password: "12345",
     },
@@ -48,12 +58,16 @@ const checkEmail = (newEmail) => {
     return false;
 };
 
+const getUser = (email, users) => {
+    for (let user in users) {
+        if (users[user].email === email) {
+            return users[user]
+        }
+    }
 
-//ROUTES StartS HERE
+    return false
+}
 
-app.get("/", (req, res) => {
-    res.send("Hello")
-});
 //registering, login and logout
 const getUserByID = (userID, users) => {
     for (let user in users) {
@@ -65,18 +79,24 @@ const getUserByID = (userID, users) => {
     return false
 }
 
-// const urlsForUser = function (userId) {
-//     const urls = {};
+const urlsForUser = function (userId) {
+    const urls = {};
     
-//     const keys = Object.values(urlDatabase)
-//     for (const id in keys){
-//         const url = urlDatabase[id]
-//         if (url.userID === userId) {
-//             urls[id] = url
-//         }
-//     }
-//     return urls
-// }
+    // const keys = Object.values(urlDatabase)
+    for (const id in urlDatabase){
+        const url = urlDatabase[id]
+        if (url.userID === userId) {
+            urls[id] = url
+        }
+    }
+    return urls
+}
+
+//ROUTES StartS HERE
+
+app.get("/", (req, res) => {
+    res.send("Hello")
+});
 
 app.get("/login", (req, res) => {
     const templateVars = { url: urlDatabase, user_id: null };
@@ -93,22 +113,13 @@ app.get("/login", (req, res) => {
     res.render("login", templateVars)
 })
 
-const getUser = (email, users) => {
-    for (let user in users) {
-        if (users[user].email === email) {
-            return users[user]
-        }
-    }
 
-    return false
-}
 
 app.post('/login', (req, res) => {
     const email = req.body.email
     const password = req.body.password
     const user = getUser(email, users)
     if (user.email !== email || user.password !== password) return res.status(403).send("Invalid login credentials! Please <a href='/login'>Try again</a>")
-    // if (user.password !== password) return res.status(403).send('Wrong password')
 
     res.cookie('user_id', user.id)
     res.redirect("/urls");
@@ -128,7 +139,7 @@ app.post("/register", (req, res) => {
     const { email, password } = req.body
     if(!email || !password) {return res.send("Cannot be empty! Please <a href='/register'> Try again</a>")}
     // console.log("CHECK EMAIL:" + checkEmail(email))
-    if (checkEmail(email)) { return res.status(400).send('Email already exists\n Try another email.') }
+    if (checkEmail(email)) { return res.status(400).send("Email already exists\n Try another email. <a href='/register'> Try again</a> ") }
 
     const id = generateRandomString(6);
     const user = {id, email, password}
@@ -140,8 +151,8 @@ app.post("/register", (req, res) => {
     //     password: req.body.password,
     // }
     res.cookie('user_id', id);
-    // console.log(users);
-    // console.log(users[req.params.id]);
+    console.log(users);
+    console.log(users[req.params.id]);
     res.redirect('/urls')
 });
 
@@ -155,13 +166,15 @@ app.get("/urls", (req, res) => {
     if (!user){
         return res.send('You must login first! Please <a href="/login">Try again</a>')
     }
-    // const urls = urlsForUser(id)
-    const templateVars = { url: urlDatabase, user_id: null };
+    const id = req.cookies.user_id
+    const urls = urlsForUser(id)
+    const templateVars = { url: urls, user_id: user.id, user_email: user.email };
+
     
     if(user) {
-        templateVars.user_id = user.email
         res.render("urls_index", templateVars);
-    }
+        }
+    
     //console.log("cookies: ", req.cookies)
     
 })
@@ -180,14 +193,36 @@ app.get("/urls/new", (req, res) => {
         const templateVars = {
         url: urlDatabase,
         user_id: req.cookies.user_id,
+        user_email: user.email
     }
     res.render("urls_new", templateVars)
 }
     
 });
+app.post("/urls/new", (req, res) => {
+    let newUrlId = generateRandomString();
+  //this checks if the randomstring is not in the DB before adding it; but the functionality is not complete, it should generate a new random string and then re-try adding it, but what are the odds that this is actually needed 
+  if (!urlDatabase[newUrlId]) {
+    urlDatabase[newUrlId] = {
+      longURL: req.body.longURL,
+      userID: req.cookies.user_id
+    }
+  }
+
+  res.redirect("/urls/" + newUrlId);
+});
 
 app.get("/urls/:id", (req, res) => {
-    const templateVars = { user_id: req.cookies.user_id, id: req.params.id, longURL: urlDatabase[req.params.id] };
+    const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
+    const user = getUserByID(userCookieID, users)
+    // if (!user){
+    //     return res.send('You must login first! Please <a href="/login">Try again</a>')
+    // }
+    // if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    //     return res.status(403).send('Sorry, only the user can view this page!')
+    //   }
+    const longURL = urlDatabase[req.params.id].longURL
+    const templateVars = { user_id: req.params.id, id: req.params.id, longURL: longURL, user_email: user.email};
     res.render("urls_show", templateVars);
 });
 
@@ -209,13 +244,14 @@ app.post("/urls/:id", (req, res) => {
 
     res.redirect("/urls")
 })
+
 // shortURL redirect to longURL
 app.get("/u/:id", (req, res) => {
-    const longURL = urlDatabase[req.params.id]
+    const longURL = urlDatabase[req.params.id].longURL
     if (!longURL) {
         return res.send('This URL id does not exist')
     }
-    // console.log(longURL)
+    console.log(longURL)
     res.redirect(longURL)
 })
 
