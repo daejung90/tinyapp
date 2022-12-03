@@ -157,11 +157,13 @@ app.get("/urls", (req, res) => {
     }
     // const urls = urlsForUser(id)
     const templateVars = { url: urlDatabase, user_id: null };
+    
     if(user) {
         templateVars.user_id = user.email
+        res.render("urls_index", templateVars);
     }
     //console.log("cookies: ", req.cookies)
-    res.render("urls_index", templateVars);
+    
 })
 
 app.get("/hello", (req, res) => {
@@ -170,11 +172,18 @@ app.get("/hello", (req, res) => {
 
 //Creating a new longURL with random ShortURL id route
 app.get("/urls/new", (req, res) => {
-    const templateVars = {
+    const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
+    const user = getUserByID(userCookieID, users)
+    if (!user){
+        res.redirect("/login")
+    } else {
+        const templateVars = {
         url: urlDatabase,
         user_id: req.cookies.user_id,
     }
     res.render("urls_new", templateVars)
+}
+    
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -203,6 +212,9 @@ app.post("/urls/:id", (req, res) => {
 // shortURL redirect to longURL
 app.get("/u/:id", (req, res) => {
     const longURL = urlDatabase[req.params.id]
+    if (!longURL) {
+        return res.send('This URL id does not exist')
+    }
     // console.log(longURL)
     res.redirect(longURL)
 })
