@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const bcrypt = require('bcryptjs')
 const cookieParser = require('cookie-parser')
 const PORT = 8080; //default port 8080 (usually when is working in localhost)
 
@@ -92,6 +93,7 @@ const urlsForUser = function (userId) {
     return urls
 }
 
+
 //ROUTES StartS HERE
 
 app.get("/", (req, res) => {
@@ -101,15 +103,6 @@ app.get("/", (req, res) => {
 app.get("/login", (req, res) => {
     const templateVars = { url: urlDatabase, user_id: null };
 
-    const getUser = (email, users) => {
-    for (let user in users) {
-        if (users[user].email === email) {
-            return users[user]
-        }
-    }
-
-    return false
-}
     res.render("login", templateVars)
 })
 
@@ -118,11 +111,19 @@ app.get("/login", (req, res) => {
 app.post('/login', (req, res) => {
     const email = req.body.email
     const password = req.body.password
-    const user = getUser(email, users)
-    if (user.email !== email || user.password !== password) return res.status(403).send("Invalid login credentials! Please <a href='/login'>Try again</a>")
+    if(!email || !password) {return res.send("Cannot be empty! Please <a href='/login'> Try again</a>")}
 
-    res.cookie('user_id', user.id)
-    res.redirect("/urls");
+    const user = getUser(email, users)
+    if (!user) return res.status(403).send("Invalid login credentials! Please <a href='/login'>Try again</a>")
+
+    if (bcrypt.compareSync(password, user.password)) {
+        res.cookie('user_id', user.id)
+        res.redirect("/urls");
+      } else {
+        res.status(403).send('Incorrect password, please try again')
+      }
+    
+    
 });
 
 app.post("/logout", (req, res) => {
@@ -142,17 +143,15 @@ app.post("/register", (req, res) => {
     if (checkEmail(email)) { return res.status(400).send("Email already exists\n Try another email. <a href='/register'> Try again</a> ") }
 
     const id = generateRandomString(6);
-    const user = {id, email, password}
-    users[id] = user
-    // let newUserID = generateRandomString();
-    // users[newUserID] = {
-    //     id: newUserID,
-    //     email: req.body.email,
-    //     password: req.body.password,
-    // }
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    users[id] = {
+        id, 
+        email, 
+        password: hashedPassword
+    }
+    
     res.cookie('user_id', id);
     console.log(users);
-    console.log(users[req.params.id]);
     res.redirect('/urls')
 });
 
