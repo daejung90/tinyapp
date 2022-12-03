@@ -1,17 +1,16 @@
 const express = require('express');
 const app = express();
 const bcrypt = require('bcryptjs')
-const cookieParser = require('cookie-parser')
+const cookieSession = require('cookie-session');
 const PORT = 8080; //default port 8080 (usually when is working in localhost)
 
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
-app.use(cookieParser())
+app.use(cookieSession({
+    name: 'session',
+    keys: ['userId']
+  }));
 
-// const urlDatabase = {
-//     "b2xVn2": "http://www.lighthouselabs.ca",
-//     "9sm5xK": "http://www.google.com"
-// };
 const urlDatabase = {
     b6UTxQ: {
       longURL: "https://www.tsn.ca",
@@ -117,7 +116,9 @@ app.post('/login', (req, res) => {
     if (!user) return res.status(403).send("Invalid login credentials! Please <a href='/login'>Try again</a>")
 
     if (bcrypt.compareSync(password, user.password)) {
-        res.cookie('user_id', user.id)
+        console.log(user.id)
+        req.session.user_id = user.id;
+        // res.cookie('user_id', user.id)
         res.redirect("/urls");
       } else {
         res.status(403).send('Incorrect password, please try again')
@@ -127,7 +128,8 @@ app.post('/login', (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-    res.clearCookie('user_id');
+    req.session = null;
+    // res.clearCookie('user_id');
     res.redirect("/login")
 })
 
@@ -149,8 +151,8 @@ app.post("/register", (req, res) => {
         email, 
         password: hashedPassword
     }
-    
-    res.cookie('user_id', id);
+    req.session.user_id = id
+    // res.cookie('user_id', id);
     console.log(users);
     res.redirect('/urls')
 });
@@ -160,7 +162,7 @@ app.get("/urls/json", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
-    const userCookieID = req.cookies.user_id             //const id = req.cookies['user_id']
+    const userCookieID = req.session.user_id             //const id = req.cookies['user_id']
     const user = getUserByID(userCookieID, users)
     if (!user){
         return res.send('You must login first! Please <a href="/login">Try again</a>')
@@ -177,14 +179,14 @@ app.get("/hello", (req, res) => {
 
 //Creating a new longURL with random ShortURL id route
 app.get("/urls/new", (req, res) => {
-    const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
+    const userCookieID = req.session.user_id //const id = req.cookies['user_id']
     const user = getUserByID(userCookieID, users)
     if (!user){
         res.redirect("/login")
     } else {
         const templateVars = {
         url: urlDatabase,
-        user_id: req.cookies.user_id,
+        user_id: req.session.user_id,
         user_email: user.email
     }
     res.render("urls_new", templateVars)
@@ -197,7 +199,7 @@ app.post("/urls/new", (req, res) => {
   if (!urlDatabase[newUrlId]) {
     urlDatabase[newUrlId] = {
       longURL: req.body.longURL,
-      userID: req.cookies.user_id 
+      userID: req.session.user_id 
     }
   }
 
@@ -205,12 +207,12 @@ app.post("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-    const userCookieID = req.cookies.user_id //const id = req.cookies['user_id']
+    const userCookieID = req.session.user_id //const id = req.cookies['user_id']
     const user = getUserByID(userCookieID, users)
     if (!user){
         return res.send('You must login first! Please <a href="/login">Try again</a>')
     }
-    if (urlDatabase[req.params.id].userID !== req.cookies.user_id) {
+    if (urlDatabase[req.params.id].userID !== req.session.user_id) {
         return res.status(403).send('Sorry, only the user can view this page!')
       }
     const longURL = urlDatabase[req.params.id].longURL
@@ -219,7 +221,7 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-    const userCookieID = req.cookies.user_id 
+    const userCookieID = req.session.user_id 
     const user = getUserByID(userCookieID, users)
     const shortURL = generateRandomString();
     const { longURL } = req.body;
