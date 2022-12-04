@@ -83,7 +83,7 @@ const urlsForUser = function(userId) {
 //ROUTES StartS HERE
 
 
-// ---------- LOGIN PAGE ----------
+// --------- LOGIN PAGE ----------
 app.get("/login", (req, res) => {
   const templateVars = { url: urlDatabase, user_id: null };
 
@@ -115,7 +115,7 @@ app.post("/logout", (req, res) => {
 });
 
 
-// ---------- REGISTER PAGES ----------
+// --------- REGISTER PAGES ----------
 app.get("/register", (req, res) => {
   const templateVars = { url: urlDatabase, user_id: null };
   res.render("register", templateVars);
